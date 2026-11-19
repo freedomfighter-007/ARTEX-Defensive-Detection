@@ -1,0 +1,24 @@
+# ARTEX Network Detection Rules (Suricata / Snort compatible style)
+# Load into IDS/IPS or SIEM that supports Suricata rule format
+# Focus: User-Agents, console titles, default ports, proxy auth
+
+# High-confidence User-Agents emitted by ARTEX code
+alert http $EXTERNAL_NET any -> $HOME_NET any (msg:"ARTEX User-Agent artex-update-check"; flow:established,to_server; http.user_agent; content:"artex-update-check"; classtype:policy-violation; sid:9000001; rev:1;)
+alert http $EXTERNAL_NET any -> $HOME_NET any (msg:"ARTEX User-Agent artex-pace"; flow:established,to_server; http.user_agent; content:"artex-pace"; classtype:policy-violation; sid:9000002; rev:1;)
+alert http $EXTERNAL_NET any -> $HOME_NET any (msg:"ARTEX / Norma User-Agent norma/0.4"; flow:established,to_server; http.user_agent; content:"norma/0.4"; classtype:policy-violation; sid:9000003; rev:1;)
+alert http $EXTERNAL_NET any -> $HOME_NET any (msg:"ARTEX enrich User-Agent artex-enrich"; flow:established,to_server; http.user_agent; content:"artex-enrich/"; classtype:policy-violation; sid:9000004; rev:1;)
+
+# Console title / branding (HTTP response)
+alert http $HOME_NET any -> $EXTERNAL_NET any (msg:"ARTEX Console Title - Autonomous Penetration Testing Console"; flow:established,to_client; http.response_body; content:"Autonomous Penetration Testing Console"; classtype:policy-violation; sid:9000010; rev:1;)
+alert http $HOME_NET any -> $EXTERNAL_NET any (msg:"ARTEX Console Title containing ARTEX"; flow:established,to_client; http.response_body; content:"ARTEX"; content:"Penetration Testing"; distance:0; classtype:policy-violation; sid:9000011; rev:1;)
+
+# Basic Auth realm
+alert http $HOME_NET any -> $EXTERNAL_NET any (msg:"ARTEX Basic Auth Realm"; flow:established,to_client; http.header; content:"WWW-Authenticate"; content:"realm=\"ARTEX\""; classtype:policy-violation; sid:9000020; rev:1;)
+
+# Default ports (informational - high volume possible)
+# Use as correlation rather than standalone block
+alert tcp $EXTERNAL_NET any -> $HOME_NET 8787 (msg:"Possible ARTEX Console Port 8787"; flow:to_server,established; classtype:misc-activity; sid:9000030; rev:1;)
+alert tcp $EXTERNAL_NET any -> $HOME_NET 8788 (msg:"Possible ARTEX Recording Proxy Port 8788"; flow:to_server,established; classtype:misc-activity; sid:9000031; rev:1;)
+
+# Proxy basic auth for artex-pace
+alert http $EXTERNAL_NET any -> $HOME_NET any (msg:"ARTEX Proxy Credentials artex-pace"; flow:established,to_server; http.authorization; content:"Basic"; content:"YXJ0ZXgtcGFjZTphcnRleC1wYWNl"; classtype:policy-violation; sid:9000040; rev:1;)
